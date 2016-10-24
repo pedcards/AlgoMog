@@ -17,6 +17,16 @@
 	Ver 1.7 - Changed logic of Annotations to create <note> element. Allows creation of large notes and avoids collisions with "target" attribute. Correctly saves output to same dir as input file.
 */
 /*	TODO (AlgoMog):
+	- Account for pages. 
+		- Get pages: <Pages/Page ID="0" NameU="Page-1"/PageSheet UniqueID='{xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx}>
+		- Index pages sequentially, PgID
+		- When scanning cells, add the PgID as 100's place for each MxID. Page-1 cell-16 would become 116, Page-2 cell-9 would be 209. Works for <100 elements per page.
+		- MxID node numbers will be collapsed in the last step.
+	- Off-page links. 
+		- Don't count the outgoing and incoming link in rendering jump links.
+		- Target page is in: <Shape/User NameU='OPCDPageID'/Value> matches the PageSheet UniqueID.
+		- Target node is in: <Shape/User NameU='OPCDShapeID'/Value> matches the Shape UniqueID.
+	- On-page links.
 	- Generate app dir and Algo.php for app.
 	- Add GUI for title info.
 	- Image elements? Image files in ./Images or such.
@@ -77,11 +87,11 @@ If (x.selectNodes("/mxGraphModel").length) {			; Identified as a mxGraphModel fr
 			}
 		}
 	}
-} 
+}	; End MxGRAPHMODEL scan
 
 If (x.selectNodes("/VisioDocument").length) {		; For VDX "VisioDocument" files. Had to comment out line 138 in xml.ahk
 	mxClass := []
-	Loop, % (mxC:=x.selectNodes("//Master")).length {		; Scan through form elements
+	Loop, % (mxC:=x.selectNodes("//Master")).length {		; Scan through master form elements
 		k := mxC.item((i:=A_Index)-1)						; Get next node from X
 		mxID := k.getAttribute("ID")
 		mxNameU := k.getAttribute("NameU")
@@ -95,44 +105,55 @@ If (x.selectNodes("/VisioDocument").length) {		; For VDX "VisioDocument" files. 
 			}
 		mxClass[mxID] := mxNameU
 	}
-	Loop, % (mxC:=x.selectNodes("//Page/Shapes/Shape")).length {		; Scan through cells
-		k := mxC.item((i:=A_Index)-1)
-		mxID := k.getAttribute("ID")						; Cell number
-		mxType := k.getAttribute("Master")					; Master form index
-		mxValue := k.selectSingleNode("Text").text			; Label for the cell
-		StringReplace, mxValue, mxValue, `n, <br>, ALL
- 
-		If (mxClass[mxType] == "Annotation") {				; Note box
-			mxSource := x.selectSingleNode("//Connect[@FromSheet='" mxID "']").getAttribute("ToSheet")
-			mxValue := k.selectSingleNode("Shapes/Shape/Text").text				; New cell defined in "//Page/Shapes/Shape/Shapes/Shape/"
-			TrimBr(mxValue)
-			y.addElement("note", "//elem[@id='" mxSource "']", mxValue)	; Add Note element.
-			continue
-		}
-		If (mxClass[mxType] == "Connector") {				; For connector types
-			mxSource := x.selectSingleNode("//Connect[@FromSheet='" mxID "'][@FromCell='BeginX']").getAttribute("ToSheet")
-			mxTarget := x.selectSingleNode("//Connect[@FromSheet='" mxID "'][@FromCell='EndX']").getAttribute("ToSheet")
-
-			If ((mxSource == "") or (mxTarget == "")) {		; Error checking for connectors
-				errtext .= y.selectSingleNode("//elem[@id='" mxSource . mxTarget "']/display").text . mxSource . mxTarget . "`n"
+	Loop, % (mxP:=x.selectNodes("//Pages/Page")).length {	; Scan through each page
+		p := mxP.item((j:=A_Index)-1)
+		jIdx := j*1000
+		Loop, % (mxC:=p.selectNodes("Shapes/Shape")).length {		; Scan through cells
+			k := mxC.item((i:=A_Index)-1)
+			mxID := k.getAttribute("ID")						; Cell number
+			mxType := k.getAttribute("Master")					; Master form index
+			mxValue := k.selectSingleNode("Text").text			; Label for the cell
+			StringReplace, mxValue, mxValue, `n, <br>, ALL
+	 
+			If (mxClass[mxType] == "Annotation") {				; Note box
+				mxSource := p.selectSingleNode("Connects/Connect[@FromSheet='" mxID "']").getAttribute("ToSheet")
+				mxValue := k.selectSingleNode("Shapes/Shape/Text").text				; New cell defined in "//Page/Shapes/Shape/Shapes/Shape/"
+				TrimBr(mxValue)
+				y.addElement("note", "//elem[@id='" (mxSource+jIDX) "']", mxValue)	; Add Note element.
+				continue
 			}
-			trimBR(mxValue)
-			y.addElement("option", "//elem[@id='" mxSource "']", {target: mxTarget}, mxValue)
-		} else {											; Anything else is a non-connector
-			y.addElement("elem", "root", {id: mxID})		; Create new node in Y
-			IfInString, mxValue, :: 
-			{
-				StringSplit, title, mxValue, :,%A_Space%	; Split titles.
-				mxTitle := title3
-				mxValue := title5
-				TrimBR(mxTitle)
-				y.addElement("title", "//elem[@id='" mxID "']", mxTitle)		; If exists, add <title> element
-			}	
-			TrimBR(mxValue)
-			y.addElement("display", "//elem[@id='" mxID "']", mxValue)		; Create element <display> with text
-		}
-	}
-}
+			If (mxClass[mxType] == "Connector") {				; For connector types
+				mxSource := p.selectSingleNode("Connects/Connect[@FromSheet='" mxID "'][@FromCell='BeginX']").getAttribute("ToSheet")
+				mxTarget := p.selectSingleNode("Connects/Connect[@FromSheet='" mxID "'][@FromCell='EndX']").getAttribute("ToSheet")
+
+				If ((mxSource == "") or (mxTarget == "")) {		; Error checking for connectors
+					errtext .= y.selectSingleNode("//elem[@id='" mxSource . mxTarget "']/display").text . mxSource . mxTarget . "`n"
+				}
+				trimBR(mxValue)
+				y.addElement("option", "//elem[@id='" (mxSource+jIDX) "']", {target: (mxTarget+jIDX)}, mxValue)
+				continue
+			}
+			If (mxClass[mxType] == "Off-page reference") {		; Section for Off-page connections
+				mxSource := k.selectSingleNode("User[@NameU='OPCShapeID']/Value").Text		; this node's UID
+				mxTarget := k.selectSingleNode("User[@NameU='OPCDShapeID']/Value").text		; get the target UID
+				y.addElement("elem", "root", {id: (mxID+jIDX)}, {UID: mxSource}, {link: mxTarget})		; Create a new node
+				continue
+			} else {											; Anything else is a NODE
+				y.addElement("elem", "root", {id: (mxID+jIDX)})		; Create new node in Y
+				IfInString, mxValue, :: 
+				{
+					StringSplit, title, mxValue, :,%A_Space%	; Split titles.
+					mxTitle := title3
+					mxValue := title5
+					TrimBR(mxTitle)
+					y.addElement("title", "//elem[@id='" (mxID+jIDX) "']", mxTitle)		; If exists, add <title> element
+				}	
+				TrimBR(mxValue)
+				y.addElement("display", "//elem[@id='" (mxID+jIDX) "']", mxValue)		; Create element <display> with text
+			}
+		}	; End NODES loop
+	}	; End PAGES loop
+}	; End VISIO document scan
 
 y.viewXML()
 
@@ -145,7 +166,6 @@ Loop, % (elemnode:=y.selectNodes("//elem")).length {
 	k := elemnode.item((i:=A_Index)-1)
 	k1 := k.getAttribute("id")
 	k.setAttribute("id", i)
-	k2 := k.selectSingleNode("display").text
 	Loop, % (elemelems:=y.selectNodes("//elem/option")).length {
 		kk := elemelems.item((j:=A_Index)-1)
 		If (kk.getAttribute("note") = k1) {
@@ -155,20 +175,39 @@ Loop, % (elemnode:=y.selectNodes("//elem")).length {
 			kk.setAttribute("target", i)
 		}
 	}
+	if (opc := k.getAttribute("UID")) {
+		z1 := y.selectSingleNode("//elem[@link='" opc "']")
+		z1.setAttribute("link", i)
+		k.removeAttribute("UID")
+		if (z2:=z1.selectSingleNode("option").getAttribute("target")) {
+			z1.setAttribute("link", z2)
+		}
+	}
+}
+Loop, % (linknode:=y.selectNodes("//elem[@link]")).length {
+	k := linknode.item((i:=A_Index)-1)
+	if (k1 := k.selectSingleNode("option").getAttribute("target")) {
+		k.setAttribute("link", k1)
+		; how do I remove an element? Perhaps moot if Algo just skips through links.
+	}
 }
 
 y.viewXML()
 
 if (strlen(errtext) > 1 ) {			; If there are items in errlog, then show errors, exit.
 	MsgBox, 16, Error!, Bad connectors associated with:`n`n%errtext%
-} else {							; If no errors, split out filename and save.
+}
+
+MsgBox, 260, Save, Create XML file?
+IfMsgBox, Yes
+{
 	y.save(outname)
 	MsgBox, XML done!, %outname%
 }
 
 ExitApp
 
-/*	Trims "<br>" from edges
+/*	Trims "<br>" from edges 
 */
 TrimBR(ByRef trimVar)		{
 	if (SubStr(trimVar, -3) = "<br>") {
