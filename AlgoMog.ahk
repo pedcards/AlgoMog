@@ -11,8 +11,11 @@
 	Ver 1.4 (1/29/14) - Convert to $elem() block for faster PHP parsing. Consider parse XML in PHP for greater flexibility. Option to save both! 
 	
 	Ver 1.5 - ALGAE script modified to load XML, with error checking if $XML object already loaded. Bad connectors added to errorlog, displayed at end and file not saved. Annotation boxes don't have configurable connectors. Title text bracketed by "::". 
+	
+	Ver 1.6 - <nl> converted to <br> and trimmed from edges.
 */
 /*	TODO (AlgoMog):
+	- Add GUI for title info.
 	- Image elements? Image files in ./Images or such.
 	- Handling of text formatting.
 	- Deflate XML for insertion into text.
@@ -35,6 +38,11 @@ FileRead, xfile, %filename%
 x := new XML(xfile)				; XML file in
 y := new XML("<root/>")			; XML file for output
 errtext := ""
+
+y.addelement("settings", "root")
+y.addelement("theme", "//settings", "A")				; A=light, B=dark
+y.addelement("title", "//settings", "Main Title")		; Main title for the Algo
+y.addelement("ver", "//settings", "0.1")				; Version number
 
 If (x.selectNodes("/mxGraphModel").length) {			; Identified as a mxGraphModel from Draw.io
 	Loop, % (mxC:=x.selectNodes("//mxCell")).length {	; Number of shape types
@@ -64,7 +72,6 @@ If (x.selectNodes("/mxGraphModel").length) {			; Identified as a mxGraphModel fr
 			}
 		}
 	}
-	y.viewXML()
 } 
 
 If (x.selectNodes("/VisioDocument").length) {		; For VDX "VisioDocument" files. Had to comment out line 138 in xml.ahk
@@ -89,42 +96,39 @@ If (x.selectNodes("/VisioDocument").length) {		; For VDX "VisioDocument" files. 
 		mxType := k.getAttribute("Master")					; Master form index
 		mxValue := k.selectSingleNode("Text").text			; Label for the cell
 		StringReplace, mxValue, mxValue, `n, <br>, ALL
-
-
-
-		if ((brTrim:=SubStr(mxValue, -3)) = "<br>") {
-			StringTrimRight mxValue, mxValue, 4
-		}
-		if ((brTrim:=SubStr(mxValue, 4)) = "<br>") {
-			StringTrimLeft mxValue, mxValue, 4
-		}
-		
-		If (mxClass[mxType] == "Annotation") {				; Note box
+ 
+ 		If (mxClass[mxType] == "Annotation") {				; Note box
 			mxSource := x.selectSingleNode("//Connect[@FromSheet='" mxID "']").getAttribute("ToSheet")
 			mxValue := k.selectSingleNode("Shapes/Shape/Text").text				; New cell defined in "//Page/Shapes/Shape/Shapes/Shape/"
+			TrimBr(mxValue)
 			y.addElement("option", "//elem[@id='" mxSource "']", {note: mxID})	; Pointer for the Note node.
 		}
 		If (mxClass[mxType] == "Connector") {				; For connector types
 			mxSource := x.selectSingleNode("//Connect[@FromSheet='" mxID "'][@FromCell='BeginX']").getAttribute("ToSheet")
 			mxTarget := x.selectSingleNode("//Connect[@FromSheet='" mxID "'][@FromCell='EndX']").getAttribute("ToSheet")
+
 			If ((mxSource == "") or (mxTarget == "")) {		; Error checking for connectors
-				errtext .= y.selectSingleNode("//elem[@id='" mxSource . mxTarget "']/display").text . "`n"
+				errtext .= y.selectSingleNode("//elem[@id='" mxSource . mxTarget "']/display").text . mxSource . mxTarget . "`n"
 			}
+			trimBR(mxValue)
 			y.addElement("option", "//elem[@id='" mxSource "']", {target: mxTarget}, mxValue)
 		} else {											; Anything else is a non-connector
 			y.addElement("elem", "root", {id: mxID})		; Create new node in Y
 			IfInString, mxValue, :: 
 			{
-				StringSplit, title, mxValue, :, %A_Space%,`r,`n,<br>
+				StringSplit, title, mxValue, :,%A_Space%
 				mxTitle := title3
 				mxValue := title5
+				TrimBR(mxTitle)
 				y.addElement("title", "//elem[@id='" mxID "']", mxTitle)		; If exists, add <title> element
 			}	
+			TrimBR(mxValue)
 			y.addElement("display", "//elem[@id='" mxID "']", mxValue)		; Create element <display> with text
 		}
 	}
-	y.viewXML()
 }
+
+y.viewXML()
 
 /*
 	Collapse the nodes numbering.
@@ -159,3 +163,14 @@ if (strlen(errtext) > 1 ) {			; If there are items in errlog, then show errors, 
 }
 
 ExitApp
+
+/*	Trims "<br>" from edges
+*/
+TrimBR(ByRef trimVar)		{
+	if (SubStr(trimVar, -3) = "<br>") {
+		StringTrimRight trimVar, trimVar, 4
+	}
+	if (SubStr(trimVar, 1, 4) = "<br>") {
+		StringTrimLeft trimVar, trimVar, 4
+	}
+}
