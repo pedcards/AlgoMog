@@ -5,7 +5,7 @@
     Ver 1.1 (1/11/14) - Draw.io now exports mxGraph XML files, which have more metadata than before. Need to use real XML parsing. Using the xml.ahk script discussed here: http://www.autohotkey.com/board/topic/89197-xml-build-parse-xml/
 	Ver 1.2 (1/19/14) - Reads Draw.io XML file and parses properly. Compresses nodes sequentially. 
 	Ver 1.3 (1/23/14) - Added autodetection of mxGraph XML vs Visio VDX files. Special thanks to maestrith from AHK forums for the help parsing the broken VDX format. Apparently, the xml.ahk script does not handle broken XML very well. Needed to comment out line 138 to make it recognize the M$ XML file. Also, did not work on Win7 machine unless I commented out the (A_OSVersion ... ) in line 129. 
-	Ver 1.4 - Need to improve behavior for terminators. Convert to $elem() block for faster PHP parsing. Or parse XML in PHP?
+	Ver 1.4 - Convert to $elem() block for faster PHP parsing. Or parse XML in PHP? Option to save both! Still need to improve behavior for terminators. May possibly require 
 */
 
 #Include xml.ahk
@@ -125,8 +125,8 @@ IfMsgBox, Yes
 	FileDelete, elem.txt
 	FileAppend, % elemblock , elem.txt
 } else {
-	MsgBox, XML
 	y.save("test.xml")
+	MsgBox, XML done!
 }
 
 ExitApp
