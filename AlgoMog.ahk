@@ -13,17 +13,18 @@
 	Ver 1.5 - ALGAE script modified to load XML, with error checking if $XML object already loaded. Bad connectors added to errorlog, displayed at end and file not saved. Annotation boxes don't have configurable connectors. Title text bracketed by "::". 
 	
 	Ver 1.6 - <nl> converted to <br> and trimmed from edges.
+	
+	Ver 1.7 - Changed logic of Annotations to create <note> element. Allows creation of large notes and avoids collisions with "target" attribute. Correctly saves output to same dir as input file.
 */
 /*	TODO (AlgoMog):
+	- Generate app dir and Algo.php for app.
 	- Add GUI for title info.
 	- Image elements? Image files in ./Images or such.
 	- Handling of text formatting.
 	- Deflate XML for insertion into text.
 	
 	TODO (Algo.php):
-	- If no text associated with connector, change text to "Proceed" to mxTarget, or Title of mxTarget. (move logic into Algo.php)
-	- Add "terminator" boxes (NameU="Terminator") special behavior. Same if no exit connectors. (move logic into Algo.php)
-	- Return point on completion? Start over button? (move logic into Algo.php)
+	- Keep title persistent until change?
 	
 */
 
@@ -34,6 +35,10 @@ SetWorkingDir %A_ScriptDir%
 
 FileSelectFile, filename,,, Select XML file:, XML files (*.xml;*.vdx)
 FileRead, xfile, %filename%
+splitpath, filename, outfilename, outdir, outext, outname
+SetWorkingDir, %outdir%
+outname := outname . "-elem.xml"
+
 
 x := new XML(xfile)				; XML file in
 y := new XML("<root/>")			; XML file for output
@@ -97,11 +102,12 @@ If (x.selectNodes("/VisioDocument").length) {		; For VDX "VisioDocument" files. 
 		mxValue := k.selectSingleNode("Text").text			; Label for the cell
 		StringReplace, mxValue, mxValue, `n, <br>, ALL
  
- 		If (mxClass[mxType] == "Annotation") {				; Note box
+		If (mxClass[mxType] == "Annotation") {				; Note box
 			mxSource := x.selectSingleNode("//Connect[@FromSheet='" mxID "']").getAttribute("ToSheet")
 			mxValue := k.selectSingleNode("Shapes/Shape/Text").text				; New cell defined in "//Page/Shapes/Shape/Shapes/Shape/"
 			TrimBr(mxValue)
-			y.addElement("option", "//elem[@id='" mxSource "']", {note: mxID})	; Pointer for the Note node.
+			y.addElement("note", "//elem[@id='" mxSource "']", mxValue)	; Add Note element.
+			continue
 		}
 		If (mxClass[mxType] == "Connector") {				; For connector types
 			mxSource := x.selectSingleNode("//Connect[@FromSheet='" mxID "'][@FromCell='BeginX']").getAttribute("ToSheet")
@@ -116,7 +122,7 @@ If (x.selectNodes("/VisioDocument").length) {		; For VDX "VisioDocument" files. 
 			y.addElement("elem", "root", {id: mxID})		; Create new node in Y
 			IfInString, mxValue, :: 
 			{
-				StringSplit, title, mxValue, :,%A_Space%
+				StringSplit, title, mxValue, :,%A_Space%	; Split titles.
 				mxTitle := title3
 				mxValue := title5
 				TrimBR(mxTitle)
@@ -156,8 +162,6 @@ y.viewXML()
 if (strlen(errtext) > 1 ) {			; If there are items in errlog, then show errors, exit.
 	MsgBox, 16, Error!, Bad connectors associated with:`n`n%errtext%
 } else {							; If no errors, split out filename and save.
-	splitpath, filename, outfilename, outdir, outext, outname
-	outname := outname . "-elem.xml"
 	y.save(outname)
 	MsgBox, XML done!, %outname%
 }
