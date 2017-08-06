@@ -186,6 +186,11 @@ If instr(filename,".vsdx") {								; For VSDX "VisioDocument" files.
 		mxValue := trim(k.selectSingleNode("Text").text," `t`r`n")	; Label for the cell
 		StringReplace, mxValue, mxValue, `n, <br>, ALL
 		
+		If (mxClass[mxType] == "Annotation") {				; Note box
+			mxSource := x.selectSingleNode("//Connects/Connect[@FromSheet='" mxID "']").getAttribute("ToSheet")
+			y.addElement("note", "//elem[@id='" (mxSource+jIDX) "']", mxValue)	; Add Note element.
+			continue
+		}
 	}
 }	; End VISIO document scan
 
