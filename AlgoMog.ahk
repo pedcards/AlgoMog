@@ -1,20 +1,6 @@
 /*	ALGAE transmogrifier, (C) TC 2013-2014
 	Tool for converting XML files into $elem() array blocks for use in ALGAE scripts.
 	ALGAE = Algorithm Logic Graphical Application Encoder
-	
-    Ver 1.1 (1/11/14) - Draw.io now exports mxGraph XML files, which have more metadata than before. Need to use real XML parsing. Using the xml.ahk script discussed here: http://www.autohotkey.com/board/topic/89197-xml-build-parse-xml/
-	
-	Ver 1.2 (1/19/14) - Reads Draw.io XML file and parses properly. Compresses nodes sequentially. 
-	
-	Ver 1.3 (1/23/14) - Added autodetection of mxGraph XML vs Visio VDX files. Special thanks to maestrith from AHK forums for the help parsing the broken VDX format. Apparently, the xml.ahk script does not handle broken XML very well. Needed to comment out line 138 to make it recognize the M$ XML file. Also, did not work on Win7 machine unless I commented out the (A_OSVersion ... ) in line 129. 
-	
-	Ver 1.4 (1/29/14) - Convert to $elem() block for faster PHP parsing. Consider parse XML in PHP for greater flexibility. Option to save both! 
-	
-	Ver 1.5 - ALGAE script modified to load XML, with error checking if $XML object already loaded. Bad connectors added to errorlog, displayed at end and file not saved. Annotation boxes don't have configurable connectors. Title text bracketed by "::". 
-	
-	Ver 1.6 - <nl> converted to <br> and trimmed from edges.
-	
-	Ver 1.7 - Changed logic of Annotations to create <note> element. Allows creation of large notes and avoids collisions with "target" attribute. Correctly saves output to same dir as input file.
 */
 /*	TODO (AlgoMog):
 	- Account for pages. 
