@@ -221,3 +221,4 @@ TrimBR(ByRef trimVar)		{
 		StringTrimLeft trimVar, trimVar, 4
 	}
 }
+
