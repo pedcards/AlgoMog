@@ -43,10 +43,14 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%
 
-FileSelectFile, filename,,, Select XML file:, XML files (*.xml;*.vdx)
-FileRead, xfile, %filename%
+FileSelectFile, filename,,, Select XML file:, XML files (*.xml;*.vdx;*.vsdx)
 splitpath, filename, outfilename, outdir, outext, outname
 SetWorkingDir, %outdir%
+if instr(filename,".vsdx") {
+	xfile := readV2016(filename)
+} else {
+	FileRead, xfile, %filename%
+}
 outname := outname . "-elem.xml"
 
 
