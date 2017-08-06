@@ -165,7 +165,7 @@ If instr(filename,".vsdx") {								; For VSDX "VisioDocument" files.
 	Loop, % (mxC:=x.selectNodes("//Shapes/Shape[(@NameU)]")).length
 	{
 		k := mxC.item(A_Index-1)
-		mxID := k.getAttribute("ID")
+		mxID := k.getAttribute("Master")
 		mxNameU := k.getAttribute("NameU")
 		IfInString, mxNameU, connector					; Any of the connector types are equal
 		{
