@@ -93,7 +93,7 @@ If (x.selectNodes("/mxGraphModel").length) {			; Identified as a mxGraphModel fr
 	}
 }	; End MxGRAPHMODEL scan
 
-If (x.selectNodes("/VisioDocument").length) {		; For VDX "VisioDocument" files. Had to comment out line 138 in xml.ahk
+If instr(filename,".vdx") {									; For VDX "VisioDocument" files. Had to comment out line 138 in xml.ahk
 	mxClass := []
 	Loop, % (mxC:=x.selectNodes("//Master")).length {		; Scan through master form elements
 		k := mxC.item((i:=A_Index)-1)						; Get next node from X
@@ -109,7 +109,7 @@ If (x.selectNodes("/VisioDocument").length) {		; For VDX "VisioDocument" files. 
 			}
 		mxClass[mxID] := mxNameU
 	}
-	Loop, % (mxP:=x.selectNodes("//Pages/Page")).length {	; Scan through each page
+	Loop, % (mxP:=x.selectNodes("*/Pages/Page")).length {	; Scan through each page
 		p := mxP.item((j:=A_Index)-1)
 		jIdx := j*1000
 		Loop, % (mxC:=p.selectNodes("Shapes/Shape")).length {		; Scan through cells
