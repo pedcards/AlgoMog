@@ -231,9 +231,9 @@ IfMsgBox, Yes
 
 ExitApp
 
+TrimBR(ByRef trimVar)		{
 /*	Trims "<br>" from edges 
 */
-TrimBR(ByRef trimVar)		{
 	if (SubStr(trimVar, -3) = "<br>") {
 		StringTrimRight trimVar, trimVar, 4
 	}
