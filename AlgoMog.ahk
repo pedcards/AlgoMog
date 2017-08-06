@@ -206,6 +206,19 @@ If instr(filename,".vsdx") {								; For VSDX "VisioDocument" files.
 			mxTarget := k.selectSingleNode("User[@NameU='OPCDShapeID']/Value").text		; get the target UID
 			y.addElement("elem", "root", {id: (mxID+jIDX)}, {UID: mxSource}, {link: mxTarget})		; Create a new node
 			continue
+		} else {											; Anything else is a NODE
+			y.addElement("elem", "root", {id: (mxID+jIDX)})		; Create new node in Y
+			IfInString, mxValue, :: 
+			{
+				StringSplit, title, mxValue, :,%A_Space%	; Split titles.
+				mxTitle := title3
+				mxValue := title5
+				TrimBR(mxTitle)
+				y.addElement("title", "//elem[@id='" (mxID+jIDX) "']", mxTitle)		; If exists, add <title> element
+			}	
+			TrimBR(mxValue)
+			y.addElement("display", "//elem[@id='" (mxID+jIDX) "']", mxValue)		; Create element <display> with text
+		}
 	}
 }	; End VISIO document scan
 
