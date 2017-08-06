@@ -159,6 +159,26 @@ If instr(filename,".vdx") {									; For VDX "VisioDocument" files. Had to comm
 	}	; End PAGES loop
 }	; End VISIO document scan
 
+If instr(filename,".vsdx") {								; For VSDX "VisioDocument" files.
+	;~ x.viewXML()
+	mxClass := []
+	Loop, % (mxC:=x.selectNodes("//Shapes/Shape[(@NameU)]")).length
+	{
+		k := mxC.item(A_Index-1)
+		mxID := k.getAttribute("ID")
+		mxNameU := k.getAttribute("NameU")
+		IfInString, mxNameU, connector					; Any of the connector types are equal
+		{
+			mxNameU := "Connector"
+		}
+		IfInstring, mxNameU, annotation					; Any annotation
+		{
+			mxNameU := "Annotation"
+		}
+		mxClass[mxID] := mxNameU
+	}
+}	; End VISIO document scan
+
 y.viewXML()
 
 /*
