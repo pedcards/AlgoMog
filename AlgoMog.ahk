@@ -222,3 +222,8 @@ TrimBR(ByRef trimVar)		{
 	}
 }
 
+Unz(Source, Dest) {
+   psh := ComObjCreate("Shell.Application")
+   psh.Namespace(Dest).CopyHere( psh.Namespace(Source).items, 4|16)
+}
+
