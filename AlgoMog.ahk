@@ -177,6 +177,16 @@ If instr(filename,".vsdx") {								; For VSDX "VisioDocument" files.
 		}
 		mxClass[mxID] := mxNameU
 	}
+	jIdx := 1*1000
+	Loop, % (mxC:=x.selectNodes("//Shapes/Shape")).length
+	{
+		k := mxC.item(A_index-1)
+		mxID := k.getAttribute("ID")						; Cell number
+		mxType := k.getAttribute("Master")					; Master form index
+		mxValue := trim(k.selectSingleNode("Text").text," `t`r`n")	; Label for the cell
+		StringReplace, mxValue, mxValue, `n, <br>, ALL
+		
+	}
 }	; End VISIO document scan
 
 y.viewXML()
