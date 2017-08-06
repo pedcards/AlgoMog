@@ -201,6 +201,11 @@ If instr(filename,".vsdx") {								; For VSDX "VisioDocument" files.
 			y.addElement("option", "//elem[@id='" (mxSource+jIDX) "']", {target: (mxTarget+jIDX)}, mxValue)
 			continue
 		}
+		If (mxClass[mxType] == "Off-page reference") {		; Section for Off-page connections
+			mxSource := k.selectSingleNode("User[@NameU='OPCShapeID']/Value").Text		; this node's UID
+			mxTarget := k.selectSingleNode("User[@NameU='OPCDShapeID']/Value").text		; get the target UID
+			y.addElement("elem", "root", {id: (mxID+jIDX)}, {UID: mxSource}, {link: mxTarget})		; Create a new node
+			continue
 	}
 }	; End VISIO document scan
 
