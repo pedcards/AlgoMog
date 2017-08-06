@@ -191,6 +191,16 @@ If instr(filename,".vsdx") {								; For VSDX "VisioDocument" files.
 			y.addElement("note", "//elem[@id='" (mxSource+jIDX) "']", mxValue)	; Add Note element.
 			continue
 		}
+		If (mxClass[mxType] == "Connector") {				; For connector types
+			mxSource := x.selectSingleNode("//Connects/Connect[@FromSheet='" mxID "'][@FromCell='BeginX']").getAttribute("ToSheet")
+			mxTarget := x.selectSingleNode("//Connects/Connect[@FromSheet='" mxID "'][@FromCell='EndX']").getAttribute("ToSheet")
+			
+			If ((mxSource == "") or (mxTarget == "")) {		; Error checking for connectors
+				errtext .= y.selectSingleNode("//elem[@id='" mxSource . mxTarget "']/display").text . mxSource . mxTarget . "`n"
+			}
+			y.addElement("option", "//elem[@id='" (mxSource+jIDX) "']", {target: (mxTarget+jIDX)}, mxValue)
+			continue
+		}
 	}
 }	; End VISIO document scan
 
