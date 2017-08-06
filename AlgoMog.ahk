@@ -59,11 +59,11 @@ y := new XML("<root/>")			; XML file for output
 errtext := ""
 
 y.addelement("settings", "root")
-y.addelement("theme", "//settings", "A")				; A=light, B=dark
-y.addelement("title", "//settings", "Main Title")		; Main title for the Algo
-y.addelement("ver", "//settings", "0.1")				; Version number
+y.addelement("theme", "/root/settings", "A")				; A=light, B=dark
+y.addelement("title", "/root/settings", "Main Title")		; Main title for the Algo
+y.addelement("ver", "/root/settings", "0.1")				; Version number
 
-If (x.selectNodes("/mxGraphModel").length) {			; Identified as a mxGraphModel from Draw.io
+If (x.selectNodes("/mxGraphModel").length) {				; Identified as a mxGraphModel from Draw.io
 	Loop, % (mxC:=x.selectNodes("//mxCell")).length {	; Number of shape types
 		k := mxC.item((i:=A_Index)-1)					; Get next type
 		mxID := k.getAttribute("id")
