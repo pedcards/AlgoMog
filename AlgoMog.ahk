@@ -227,3 +227,13 @@ Unz(Source, Dest) {
    psh.Namespace(Dest).CopyHere( psh.Namespace(Source).items, 4|16)
 }
 
+readV2016(fnam) {
+	tmpdir := format("{1:x}",A_TickCount)
+	tmpdir := A_WorkingDir "\" tmpdir
+	FileCreateDir, % tmpdir
+	FileCopy, %fnam%, % tmpdir "\tmp.zip", 1
+	unz(tmpdir "\tmp.zip",tmpdir)
+	FileRead,txt,% tmpdir "\visio\pages\page1.xml"
+	FileRemoveDir, % tmpdir, 1
+	return txt
+}
